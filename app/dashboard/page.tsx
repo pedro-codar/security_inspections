@@ -113,8 +113,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-10">
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+    <div className="flex min-h-screen justify-center bg-background px-4 py-10">
+      <div className="flex w-full max-w-[350px] flex-col gap-6">
         <header className="flex items-start justify-between gap-4">
           <div>
             <p className="text-muted-foreground text-sm">Olá,</p>

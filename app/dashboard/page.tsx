@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
+import { callWebhook } from "../actions/webhook"
 
 interface TasksList {
   id: string
@@ -26,6 +27,8 @@ export default function Dashboard() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [name, setName] = useState('')
+  const [webhookResponse, setWebhookResponse] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -115,46 +118,85 @@ export default function Dashboard() {
     router.push('/auth/login')
   }
 
+  async function handleCallWebhook(){
+    if (!name) return
+
+    try {
+      const result = await callWebhook(name)
+      setWebhookResponse(result.data.message ?? "nada chegou")
+    } catch (err) {
+      setError("webhook error")
+    }
+  }
+
   return (
   
         <div className="flex flex-col items-center justify-center min-h-screen p-10">
 
-            {profile?.role === 'admin' && <form onSubmit={handleCreateTask} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm text-muted-foreground">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="type the task title"
-                />
-              </div>
+          {profile?.role === 'admin' && 
+          <form onSubmit={handleCreateTask} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm text-muted-foreground">
+                Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring"
+                placeholder="type the task title"
+              />
+            </div>
 
-              <div>
-                <label className="mb-1 block text-sm text-muted-foreground">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                  className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="type the tasks description"
-                />
-              </div>
+            <div>
+              <label className="mb-1 block text-sm text-muted-foreground">
+                Description
+              </label>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring"
+                placeholder="type the tasks description"
+              />
+            </div>
 
-              <button
-                type="submit"
-                className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                Create Task
-              </button>
-            </form> }
+            <button
+              type="submit"
+              className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              Create Task
+            </button>
+          </form> }
+
+          <div className="my-10">
+            <div>
+              <label className="mb-1 block text-sm text-muted-foreground">
+                Nome completo
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring"
+                placeholder="type the task title"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              onClick={handleCallWebhook}
+            >
+              Call webhook 
+            </button>
+
+            <p>{webhookResponse}</p>
+          </div>
+          
 
           {error ?? <p>{error}</p>}
 

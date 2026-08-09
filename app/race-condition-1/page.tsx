@@ -173,7 +173,7 @@ export default function ProductList() {
                     </button>
 
                     <h2 className="font-['Space_Grotesk',_sans-serif] text-xl font-medium text-[#1B1B1B]">
-                        {productSelected?.name}
+                        {productSelected?.name + " - " + productSelected?.id}
                     </h2>
                 
                     <div className="mt-6">

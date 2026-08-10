@@ -11,6 +11,7 @@ export async function Credits() {
         return { error: 'Unauthorized' }
     }
 
+    // Intentionally vulnerable: check-then-act (TOCTOU) — no unique constraint expected
     const { data: creditsData } = await supabase
         .from('credits_aclaim')
         .select('*')
@@ -32,25 +33,19 @@ export async function Credits() {
         return { error: "Error to insert a new row in credits_aclaim" }
     }
 
-    const { data: profileData, error: profileReadError } = await supabase
+    const {data: profileData} = await supabase
         .from('profile')
         .select('credits')
         .eq('id', user.id)
         .single()
 
-    if (profileReadError || !profileData) {
-        return { error: profileReadError?.message || 'Profile not found' }
-    }
-
-    const sum = Number(profileData.credits ?? 0) + 10
-
-    const { error: profileError } = await supabase
+    const {error: profileError} = await supabase
         .from('profile')
         .update({
-            'credits': sum
+            'credits': profileData?.credits + 10
         })
         .eq('id', user.id)
-
+    
     if (profileError) {
         return { error: profileError.message }
     }

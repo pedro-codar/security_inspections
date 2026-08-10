@@ -11,12 +11,10 @@ export async function Credits() {
         return { error: 'Unauthorized' }
     }
 
-    // Intentionally vulnerable: check-then-act (TOCTOU) — no unique constraint expected
     const { data: creditsData } = await supabase
         .from('credits_aclaim')
         .select('*')
         .eq('profile_id', user.id)
-        .limit(1)
         .maybeSingle()
 
     if (creditsData) {

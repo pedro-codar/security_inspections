@@ -48,7 +48,7 @@ export default function RaceCondition1Page() {
 
     if (claimed) return
 
-    const result = await Credits(Number(profile?.credits))
+    const result = await Credits()
 
     if(result.error){
       toast.error(result.error)

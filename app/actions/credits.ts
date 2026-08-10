@@ -2,37 +2,49 @@
 
 import { createClient } from "@/utils/supabase/server"
 
-export async function Credits(userCredits: number){
+export async function Credits() {
     const supabase = await createClient()
 
-    const {data: {user}} = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user){
-        return {error: 'Unauthorized'}
+    if (!user) {
+        return { error: 'Unauthorized' }
     }
 
-    const {data: creditsData} = await supabase
+    const { data: creditsData } = await supabase
         .from('credits_aclaim')
         .select('*')
         .eq('profile_id', user.id)
+        .limit(1)
         .maybeSingle()
-    
+
     if (creditsData) {
-        return {error: "You already aclaimed that credits."}
+        return { error: "You already aclaimed that credits." }
     }
 
-    const {error: creditsError} = await supabase
+    const { error: creditsError } = await supabase
         .from('credits_aclaim')
         .insert({
             'profile_id': user.id
         })
 
     if (creditsError) {
-        return {error: "Error to insert a new row in credits_aclaim"}
+        return { error: "Error to insert a new row in credits_aclaim" }
     }
 
-    const sum = userCredits + 10
-    const {error: profileError} = await supabase
+    const { data: profileData, error: profileReadError } = await supabase
+        .from('profile')
+        .select('credits')
+        .eq('id', user.id)
+        .single()
+
+    if (profileReadError || !profileData) {
+        return { error: profileReadError?.message || 'Profile not found' }
+    }
+
+    const sum = Number(profileData.credits ?? 0) + 10
+
+    const { error: profileError } = await supabase
         .from('profile')
         .update({
             'credits': sum
@@ -40,8 +52,8 @@ export async function Credits(userCredits: number){
         .eq('id', user.id)
 
     if (profileError) {
-        return {error: profileError.message}
+        return { error: profileError.message }
     }
 
-    return {success: "Credits aclaimed"}
+    return { success: "Credits aclaimed" }
 }

@@ -22,7 +22,7 @@ export async function updateSession(request: NextRequest) {
       },
     }
   )
-
+/*
   // IMPORTANT: do not run code between createServerClient and getUser()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -34,7 +34,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
-  }
+  }*/
 
   return supabaseResponse
 }

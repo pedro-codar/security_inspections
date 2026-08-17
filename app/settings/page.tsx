@@ -14,7 +14,6 @@ export default function ProfileSettings() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const router = useRouter()
-
   
   function sanitizeStorageFileName(fileName: string): string {
     const withoutAccents = fileName
@@ -40,8 +39,7 @@ export default function ProfileSettings() {
     return `${safeBase}${safeExtension}`
   }
   
-  async function handleSave(value: React.FormEvent){
-    value.preventDefault()
+  async function handleSave(){
 
     const supabase = createClient()
 
@@ -62,7 +60,26 @@ export default function ProfileSettings() {
         return
     }
 
-    toast.success("Usuário não autenticado.")
+    const {data: { session }} = await supabase.auth.getSession()
+
+    if (!session) {
+        toast.error("Usuário não autenticado.")
+        return
+    }
+
+    const {error} = await supabase
+        .from("profile")
+        .update({
+            'name': "Pedro"
+        })
+        .eq('id', session.user.id)
+
+    if(error) {
+        toast.error(error.message)
+        return
+    }
+
+    toast.success("Dado atualizado com sucessso.")
 
   }
   
@@ -75,6 +92,36 @@ export default function ProfileSettings() {
       return URL.createObjectURL(file)
     })
     setSelectedFile(file)
+  }
+
+  async function handleSaveName(){
+    const supabase = createClient()
+
+    if (!name) {
+        toast.error("Escreva o nome do usuário.")
+        return
+    }
+
+    const {data: {user}} = await supabase.auth.getUser()
+
+    if(!user) {
+        toast.error("Usuário não autenticado.")
+        return
+    }
+
+    const {error: profileError} = await supabase
+        .from('profile')
+        .update({
+            'name': name
+        })
+        .eq('id', user.id)
+
+    if(profileError){
+        toast.error(profileError.message)
+        return
+    }
+
+    toast.success("Nome atualizado com sucesso.")
   }
 
   return (
@@ -162,7 +209,27 @@ export default function ProfileSettings() {
               />
             </div>
 
-            <div>
+            <button
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              onClick={handleSaveName}
+            >
+              Salvar dados
+            </button>
+          </div>
+        </section>
+
+        {/* Section 3: Password */}
+        <section className="rounded-lg border border-border bg-card p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Lock className="size-4 text-primary" />
+            <h2 className="text-sm font-semibold text-card-foreground">
+              Alterar dados de acesso
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+
+          <div>
               <label className="mb-1 block text-xs text-muted-foreground">
                 Email
               </label>
@@ -175,24 +242,7 @@ export default function ProfileSettings() {
               />
             </div>
 
-            <button
-              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Salvar dados
-            </button>
-          </div>
-        </section>
 
-        {/* Section 3: Password */}
-        <section className="rounded-lg border border-border bg-card p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <Lock className="size-4 text-primary" />
-            <h2 className="text-sm font-semibold text-card-foreground">
-              Alterar senha
-            </h2>
-          </div>
-
-          <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">
                 Nova senha

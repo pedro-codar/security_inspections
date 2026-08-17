@@ -181,15 +181,15 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span
-                className={`rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase ${
-                  isAdmin
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground'
-                }`}
+              <button
+                type="button"
+                onClick={() => router.push("/settings")}
+                disabled={loggingOut}
+                className="border-border text-muted-foreground hover:bg-muted flex size-8 items-center justify-center rounded-lg border disabled:opacity-50"
+                aria-label="Sair"
               >
-                {profile?.role ?? 'user'}
-              </span>
+                <Settings className="size-5" />
+              </button>
               <button
                 type="button"
                 onClick={handleLogout}

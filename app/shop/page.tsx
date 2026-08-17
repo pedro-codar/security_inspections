@@ -47,7 +47,11 @@ export default function Shop() {
     }
 
     const [productRes, profileRes, myProductRes] = await Promise.all([
-        supabase.from('products').select('*'),
+
+
+        supabase.from('products').select('*, seller(name, foto)'),
+
+        
         supabase.from('profile').select('*').eq('id', user.id).single(),
         supabase.from('buy').select('*').eq('profile_id', user.id)
     ])

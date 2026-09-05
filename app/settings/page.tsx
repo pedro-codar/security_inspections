@@ -62,20 +62,15 @@ export default function ProfileSettings() {
 
     const {data: { session }} = await supabase.auth.getSession()
 
-    if (!session) {
-        toast.error("Usuário não autenticado.")
-        return
-    }
-
     const {error} = await supabase
         .from("profile")
         .update({
             'name': "Pedro"
         })
-        .eq('id', session.user.id)
+        .eq('id', session?.user.id)
 
     if(error) {
-        toast.error(error.message)
+        toast.error("Erro ao editar foto de usuário")
         return
     }
 

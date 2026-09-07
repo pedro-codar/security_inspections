@@ -9,18 +9,43 @@ export default function LoginPage() {
   const supabase = createClient()
 
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [step, setStep] = useState<"request" | "verify">("request")
+  const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSendCode(e: React.FormEvent){
+    e.preventDefault()
+
+    setError('')
+    setLoading(true)
+
+    const {error} = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false
+      }
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setError(error.message)
+      return
+    }
+
+    setStep("verify")
+  }
+  
+  async function handleVerifyCode(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const {error} = await supabase.auth.verifyOtp({
       email,
-      password,
+      token: code,
+      type: 'email'
     })
 
     setLoading(false)
@@ -41,7 +66,8 @@ export default function LoginPage() {
           Log in
         </h1>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        {step === "request" ?(
+          <form onSubmit={handleSendCode} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm text-muted-foreground">
               Email
@@ -53,20 +79,6 @@ export default function LoginPage() {
               required
               className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring"
               placeholder="you@company.com"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-muted-foreground">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-md border border-border bg-input px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring"
-              placeholder="••••••••"
             />
           </div>
 
@@ -82,6 +94,20 @@ export default function LoginPage() {
             {loading ? 'Logging in...' : 'Log in'}
           </button>
         </form>
+        ) : ( 
+          <form onSubmit={handleVerifyCode}>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="6-digit code"
+              maxLength={8}
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? 'Verifying...' : 'Verify'}
+            </button>
+        </form>
+      )}
       </div>
     </div>
   )

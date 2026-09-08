@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Upload, User, Lock, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -14,6 +14,30 @@ export default function ProfileSettings() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    async function fetchProfile(){
+      const {data: {session}} = await supabase.auth.getSession()
+
+      if(!session){
+        router.push('auth/login')
+        return
+      }
+
+      const {data, error} = await supabase
+        .from("profile")
+        .select("profile_image_url")
+        .eq('id', session.user.id)
+        .single()
+
+      if(error) return
+
+      setAvatarPreview(data.profile_image_url)
+    }
+    fetchProfile()
+  }, [router])
   
   function sanitizeStorageFileName(fileName: string): string {
     const withoutAccents = fileName
@@ -60,12 +84,14 @@ export default function ProfileSettings() {
         return
     }
 
+    const url = supabase.storage.from('profile_image').getPublicUrl(uploadData.path).data.publicUrl
+
     const {data: { session }} = await supabase.auth.getSession()
 
     const {error} = await supabase
         .from("profile")
         .update({
-            'name': "Pedro"
+            'profile_image_url': url
         })
         .eq('id', session?.user.id)
 
@@ -203,71 +229,24 @@ export default function ProfileSettings() {
                 placeholder="Seu nome"
               />
             </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                Telefone
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                placeholder="(00) 0 0000-0000"
+              />
+            </div>
 
             <button
               className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               onClick={handleSaveName}
             >
               Salvar dados
-            </button>
-          </div>
-        </section>
-
-        {/* Section 3: Password */}
-        <section className="rounded-lg border border-border bg-card p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <Lock className="size-4 text-primary" />
-            <h2 className="text-sm font-semibold text-card-foreground">
-              Alterar dados de acesso
-            </h2>
-          </div>
-
-          <div className="space-y-3">
-
-          <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                placeholder="seu@email.com"
-              />
-            </div>
-
-
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
-                Nova senha
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground">
-                Confirmar nova senha
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Atualizar senha
             </button>
           </div>
         </section>

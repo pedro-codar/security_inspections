@@ -6,62 +6,28 @@ import { createClient } from '@/utils/supabase/client'
 import {
   LayoutDashboard,
   LogOut,
-  Plus,
-  Shield,
-  Users,
   Package,
   Settings,
-  Trash2,
+  SquarePen,
 } from 'lucide-react'
 
 interface Profile {
   id: string
   name: string | null
+  whatsapp: string | null
   email: string | null
   role: 'admin' | 'user' | string
+  profile_image_url: string | null
 }
-
-type MockUser = {
-  id: string
-  name: string
-  email: string
-}
-
-type MockProduct = {
-  id: string
-  name: string
-  price: string
-}
-
-const INITIAL_USERS: MockUser[] = [
-  { id: '1', name: 'Ana Costa', email: 'ana@empresa.com' },
-  { id: '2', name: 'Bruno Lima', email: 'bruno@empresa.com' },
-  { id: '3', name: 'Carla Dias', email: 'carla@empresa.com' },
-]
-
-const INITIAL_PRODUCTS: MockProduct[] = [
-  { id: '1', name: 'Plano Básico', price: 'R$ 49' },
-  { id: '2', name: 'Plano Pro', price: 'R$ 99' },
-]
 
 export default function DashboardPage() {
   const router = useRouter()
 
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [profileList, setProfileList] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
-
-  const [users, setUsers] = useState(INITIAL_USERS)
-  const [products, setProducts] = useState(INITIAL_PRODUCTS)
-
-  const [newUserName, setNewUserName] = useState('')
-  const [newUserEmail, setNewUserEmail] = useState('')
-  const [newProductName, setNewProductName] = useState('')
-  const [newProductPrice, setNewProductPrice] = useState('')
-  const [adminNotice, setAdminNotice] = useState('')
-
-  const isAdmin = profile?.role === 'admin'
 
   useEffect(() => {
     const supabase = createClient()
@@ -78,9 +44,7 @@ export default function DashboardPage() {
 
       const { data, error } = await supabase
         .from('profile')
-        .select('id, name, email, role')
-        .eq('id', session.user.id)
-        .single()
+        .select('*')
 
       if (error) {
         setError(error.message)
@@ -88,7 +52,8 @@ export default function DashboardPage() {
         return
       }
 
-      setProfile(data)
+      setProfileList(data)
+      setProfile(data.find((s) => s.id === session.user.id))
       setLoading(false)
     }
 
@@ -101,48 +66,6 @@ export default function DashboardPage() {
     await supabase.auth.signOut()
     router.push('/auth/login')
     router.refresh()
-  }
-
-  function handleAddUser(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newUserName.trim() || !newUserEmail.trim()) return
-
-    setUsers((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        name: newUserName.trim(),
-        email: newUserEmail.trim(),
-      },
-    ])
-    setNewUserName('')
-    setNewUserEmail('')
-    setAdminNotice('Usuário adicionado (mock)')
-  }
-
-  function handleAddProduct(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newProductName.trim() || !newProductPrice.trim()) return
-
-    setProducts((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        name: newProductName.trim(),
-        price: newProductPrice.trim(),
-      },
-    ])
-    setNewProductName('')
-    setNewProductPrice('')
-    setAdminNotice('Produto adicionado (mock)')
-  }
-
-  function removeUser(id: string) {
-    setUsers((prev) => prev.filter((u) => u.id !== id))
-  }
-
-  function removeProduct(id: string) {
-    setProducts((prev) => prev.filter((p) => p.id !== id))
   }
 
   if (loading) {
@@ -172,7 +95,7 @@ export default function DashboardPage() {
               </span>
               <div>
                 <p className="text-foreground text-sm font-semibold leading-tight">
-                  Dashboard
+                  Dashboard Admin
                 </p>
                 <p className="text-muted-foreground text-xs">
                   {profile?.name ?? 'Usuário'}
@@ -204,179 +127,70 @@ export default function DashboardPage() {
         </header>
 
         <main className="flex flex-1 flex-col gap-4 px-4 py-4 pb-8">
-          <section className="border-border bg-card rounded-2xl border p-4">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Sua conta
-            </p>
-            <p className="text-foreground mt-1 text-base font-semibold">
-              {profile?.email}
-            </p>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-              Bem-vindo ao painel. Aqui você acompanha suas informações.
-            </p>
-          </section>
-
-          <section className="border-border bg-card rounded-2xl border p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <Package className="text-muted-foreground size-4" />
-              <h2 className="text-foreground text-sm font-semibold">
-                Produtos
-              </h2>
-            </div>
-            <ul className="space-y-2">
-              {products.map((product) => (
-                <li
-                  key={product.id}
-                  className="bg-muted/60 flex items-center justify-between rounded-xl px-3 py-2.5"
-                >
-                  <span className="text-foreground text-sm">{product.name}</span>
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {product.price}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Intentionally client-only role check — admin UI */}
-          {isAdmin && (
-            <>
-              <div className="bg-primary/10 text-primary flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold">
-                <Shield className="size-3.5 shrink-0" />
-                Área administrativa
+          <section>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Package className="text-primary size-4" />
+                <h2 className="text-foreground text-sm font-semibold">
+                  Lista de Usuários
+                </h2>
               </div>
+              <span className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-0.5 text-[10px] font-semibold">
+                {profileList.length}
+              </span>
+            </div>
 
-              {adminNotice && (
-                <p className="bg-accent text-accent-foreground rounded-xl px-3 py-2 text-xs">
-                  {adminNotice}
+            {profileList.length === 0 ? (
+              <div className="border-border bg-card flex flex-col items-center gap-2 rounded-2xl border border-dashed px-4 py-10 text-center">
+                <Package className="text-muted-foreground size-8" />
+                <p className="text-foreground text-sm font-medium">
+                  Nenhum produto ainda
                 </p>
-              )}
-
-              <section className="border-primary/30 bg-card rounded-2xl border-2 border-dashed p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Users className="text-primary size-4" />
-                  <h2 className="text-foreground text-sm font-semibold">
-                    Gerenciar usuários
-                  </h2>
-                </div>
-
-                <ul className="mb-4 space-y-2">
-                  {users.map((user) => (
+                <p className="text-muted-foreground max-w-[220px] text-xs leading-relaxed">
+                  Compre um item acima para ver seus produtos aqui.
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {profileList.map((item) => {
+                  return (
                     <li
-                      key={user.id}
-                      className="border-border flex items-center justify-between gap-2 rounded-xl border px-3 py-2"
+                      key={item.id}
+                      className="border-border bg-card flex gap-3 overflow-hidden rounded-2xl border p-3"
                     >
-                      <div className="min-w-0">
-                        <p className="text-foreground truncate text-sm font-medium">
-                          {user.name}
+                      {item.profile_image_url && ( 
+                        <div className="bg-muted size-20 shrink-0 overflow-hidden rounded-xl">
+                          <img
+                            src={item.profile_image_url}
+                            className="size-full object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex min-w-0 flex-1 flex-col justify-center">
+                        <p className="text-foreground truncate text-sm font-semibold">
+                          {item.name}
                         </p>
-                        <p className="text-muted-foreground truncate text-xs">
-                          {user.email}
+                        <p className="text-primary mt-0.5 text-xs font-medium">
+                          {item.email}
+                        </p>
+                        <p className="text-primary mt-0.5 text-xs font-medium">
+                          {item.whatsapp}
                         </p>
                       </div>
+
                       <button
                         type="button"
-                        onClick={() => removeUser(user.id)}
-                        className="text-destructive hover:bg-destructive/10 flex size-8 shrink-0 items-center justify-center rounded-lg"
-                        aria-label={`Remover ${user.name}`}
+                        className="bg-primary text-primary-foreground hover:bg-destructive/90 mt-auto rounded-xl px-2 py-2 text-xs font-semibold transition-colors"
                       >
-                        <Trash2 className="size-3.5" />
+                        <SquarePen className='h-5 w-4'/>
                       </button>
                     </li>
-                  ))}
-                </ul>
-
-                <form onSubmit={handleAddUser} className="space-y-2.5">
-                  <p className="text-muted-foreground text-xs font-medium">
-                    Adicionar usuário
-                  </p>
-                  <input
-                    type="text"
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                    placeholder="Nome"
-                    className="border-border bg-input text-foreground w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <input
-                    type="email"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    placeholder="Email"
-                    className="border-border bg-input text-foreground w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold"
-                  >
-                    <Plus className="size-4" />
-                    Criar usuário
-                  </button>
-                </form>
-              </section>
-
-              <section className="border-primary/30 bg-card rounded-2xl border-2 border-dashed p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Settings className="text-primary size-4" />
-                  <h2 className="text-foreground text-sm font-semibold">
-                    Cadastrar produto
-                  </h2>
-                </div>
-
-                <ul className="mb-4 space-y-2">
-                  {products.map((product) => (
-                    <li
-                      key={product.id}
-                      className="border-border flex items-center justify-between gap-2 rounded-xl border px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-foreground truncate text-sm font-medium">
-                          {product.name}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {product.price}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeProduct(product.id)}
-                        className="text-destructive hover:bg-destructive/10 flex size-8 shrink-0 items-center justify-center rounded-lg"
-                        aria-label={`Remover ${product.name}`}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                <form onSubmit={handleAddProduct} className="space-y-2.5">
-                  <p className="text-muted-foreground text-xs font-medium">
-                    Novo produto
-                  </p>
-                  <input
-                    type="text"
-                    value={newProductName}
-                    onChange={(e) => setNewProductName(e.target.value)}
-                    placeholder="Nome do produto"
-                    className="border-border bg-input text-foreground w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <input
-                    type="text"
-                    value={newProductPrice}
-                    onChange={(e) => setNewProductPrice(e.target.value)}
-                    placeholder="Preço (ex: R$ 149)"
-                    className="border-border bg-input text-foreground w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold"
-                  >
-                    <Plus className="size-4" />
-                    Criar produto
-                  </button>
-                </form>
-              </section>
-            </>
-          )}
+                  )
+                })}
+              </ul>
+            )}
+          </section>
         </main>
       </div>
     </div>
